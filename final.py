@@ -4,20 +4,46 @@ import pygame
 
 LARGURA, ALTURA = 800, 800
 
-# --------- OBJETOS ---------
-vertices1 = [
-    (2,1,5.37), (2,1.5,5.37), (1,1,3.63), (1,1.5,3.63),
-    (0.5,1,4.5), (0.5,1.5,4.5), (2.5,1,4.5), (2.5,1.5,4.5),
-    (1,1,5.37), (1,1.5,5.37), (2,1,3.63), (2,1.5,3.63),
-    (1.5,1,0), (1.5,1.5,0), (1.75,1,0), (1.75,1.5,0)
-]
+# --------- OBJETO 1: CILINDRO SEM BASE INFERIOR ---------
+def cria_cilindro(raio=1.5, altura=5.37, segmentos=128):
+    vertices = []
+    faces = []
 
-faces1 = [
-    [12,13,15,14], [10,11,15,14], [2,3,13,12], [10,2,12,14],
-    [10,11,7,6], [6,7,1,0], [0,1,9,8], [8,9,5,4],
-    [4,5,3,2], [1,9,5,3,11,7], [0,8,4,2,10,6]
-]
+    for i in range(segmentos):
+        ang = 2 * math.pi * i / segmentos
+        x = raio * math.cos(ang)
+        y = raio * math.sin(ang)
+        vertices.append((x, y, 0))           # base inferior
+        vertices.append((x, y, altura))      # base superior
 
+    # Não adiciona a base inferior
+
+    faces.append([i*2 + 1 for i in range(segmentos)])  # apenas base superior
+
+    for i in range(segmentos):
+        base1 = (i * 2) % (segmentos * 2)
+        base2 = ((i + 1) * 2) % (segmentos * 2)
+        topo1 = base1 + 1
+        topo2 = base2 + 1
+        faces.append([base1, base2, topo2, topo1])  # lateral
+
+    return vertices, faces
+
+vertices1_raw, faces1 = cria_cilindro()
+# Aplica deslocamento para coincidir com posição original
+def centraliza(vertices):
+    cx = sum(x for x, _, _ in vertices) / len(vertices)
+    cy = sum(y for _, y, _ in vertices) / len(vertices)
+    cz = sum(z for _, _, z in vertices) / len(vertices)
+    return [(x - cx, y - cy, z - cz) for x, y, z in vertices]
+
+def transforma(vertices, posicao):
+    vc = centraliza(vertices)
+    return [(x + posicao[0], y + posicao[1], z + posicao[2]) for x, y, z in vc]
+
+vertices1 = transforma(vertices1_raw, (-3, 0, 0))
+
+# --------- OBJETO 2: BLOCO ---------
 vertices2 = [
     (3,0,0), (3,4,0), (0,4,0), (0,0,0),
     (2,1,1), (2,3,1), (1,3,1), (1,1,1)
@@ -30,7 +56,7 @@ faces2 = [
 
 # --------- COR FIXA ---------
 hue1 = 120  # verde
-hue2 = 315   # rosa
+hue2 = 315  # rosa
 
 # --------- FUNÇÕES VETORIAIS ---------
 def sub(a, b): return (a[0]-b[0], a[1]-b[1], a[2]-b[2])
@@ -62,19 +88,8 @@ def projeta_isometrica(p):
     offset = (LARGURA // 2, ALTURA // 2)
     return (int(x_iso * escala + offset[0]), int(y_iso * escala + offset[1]))
 
-def centraliza(vertices):
-    cx = sum(x for x, _, _ in vertices) / len(vertices)
-    cy = sum(y for _, y, _ in vertices) / len(vertices)
-    cz = sum(z for _, _, z in vertices) / len(vertices)
-    return [(x - cx, y - cy, z - cz) for x, y, z in vertices]
-
-def transforma(vertices, posicao):
-    vc = centraliza(vertices)
-    return [(x + posicao[0], y + posicao[1], z + posicao[2]) for x, y, z in vc]
-
-
 # --------- PRÉ-PROCESSAMENTO ---------
-v1 = transforma(vertices1, (-3, 0, 0))
+v1 = vertices1
 v2 = transforma(vertices2, (3, 0, 0))
 todos_vertices = v1 + v2
 vertices_proj = [projeta_isometrica(v) for v in todos_vertices]
@@ -86,7 +101,7 @@ todas_faces = faces_idx1 + faces_idx2
 # --------- PYGAME SETUP ---------
 pygame.init()
 tela = pygame.display.set_mode((LARGURA, ALTURA))
-pygame.display.set_caption("Parte 3")
+pygame.display.set_caption("Cilindro sem base inferior")
 clock = pygame.time.Clock()
 running = True
 
