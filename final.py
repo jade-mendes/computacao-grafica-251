@@ -8,12 +8,6 @@ def hsv_to_rgb(h, s, v):
     return (int(r * 255), int(g * 255), int(b * 255))
 
 # --------- FUNÇÕES AUXILIARES ---------
-# --------- CORES ---------
-def hsv_to_rgb(h, s, v):
-    r, g, b = colorsys.hsv_to_rgb(h / 360, s, v)
-    return (int(r * 255), int(g * 255), int(b * 255))
-
-# --------- FUNÇÕES AUXILIARES ---------
 def sub(a, b): return (a[0]-b[0], a[1]-b[1], a[2]-b[2])
 def dot(a, b): return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
 def cross(a, b):
@@ -27,9 +21,8 @@ def normalize(v):
     return (v[0]/norm, v[1]/norm, v[2]/norm) if norm != 0 else (0, 0, 0)
 
 # --------- ILUMINAÇÃO ---------
-light_dir = normalize((-2, -1, -3))
+light_dir = normalize((-2, -5, -3))
 
-# --------- PROJEÇÃO E TRANSFORMAÇÃO ---------
 # --------- PROJEÇÃO E TRANSFORMAÇÃO ---------
 def projeta_isometrica(p):
     x, y, z = p
@@ -160,32 +153,27 @@ while running:
             v1f = sub(p1, p0)
             v2f = sub(p2, p0)
             normal = normalize(cross(v1f, v2f))
-            intensidade = dot(normal, light_dir)
 
-    for vertices, faces, hue in objetos:
-        # Algoritmo do pintor
-        faces_ordenadas = sorted(faces, key=lambda face: sum(vertices[i][2] for i in face) / len(face))
-        for face in faces_ordenadas:
-            p0, p1, p2 = vertices[face[0]], vertices[face[1]], vertices[face[2]]
-            v1f = sub(p1, p0)
-            v2f = sub(p2, p0)
-            normal = normalize(cross(v1f, v2f))
-            intensidade = dot(normal, light_dir)
+            is_cilindro = (vertices, faces) == (v2, faces2)
 
-            if intensidade > 0:
-                brilho = 0.3 + 0.7 * abs(intensidade)
+            if is_cilindro:
+                # Phong shading para superfície polida
+                view_dir = normalize((0, 0, -1))
+                diff = max(dot(normal, light_dir), 0)
+                reflex = sub(
+                    tuple(2 * dot(normal, light_dir) * n for n in normal),
+                    light_dir
+                )
+                spec = pow(max(dot(normalize(reflex), view_dir), 0), 20) 
+                Ia, Id, Is = 0.2, 0.6, 0.4
+                intensidade = Ia + Id * diff + Is * spec
             else:
-                brilho = 0.5 * abs(intensidade)
+                # Gouraud/simples para o outro objeto
+                intensidade = dot(normal, light_dir)
+                intensidade = 0.3 + 0.7 * abs(intensidade) if intensidade > 0 else 0.5 * abs(intensidade)
 
-            cor = hsv_to_rgb(hue, 1, brilho)
-            pontos = [projeta_isometrica(vertices[i]) for i in face]
-            pygame.draw.polygon(tela, cor, pontos)
-            if intensidade > 0:
-                brilho = 0.3 + 0.7 * abs(intensidade)
-            else:
-                brilho = 0.5 * abs(intensidade)
-
-            cor = hsv_to_rgb(hue, 1, brilho)
+            intensidade = max(0, min(intensidade, 1))
+            cor = hsv_to_rgb(hue, 1, intensidade)
             pontos = [projeta_isometrica(vertices[i]) for i in face]
             pygame.draw.polygon(tela, cor, pontos)
 
