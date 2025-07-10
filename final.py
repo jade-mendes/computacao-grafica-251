@@ -132,7 +132,7 @@ faces2 = faces_cilindro + [[offset + i for i in face] for face in faces_topo]
 LARGURA, ALTURA = 800, 800
 pygame.init()
 tela = pygame.display.set_mode((LARGURA, ALTURA))
-pygame.display.set_caption("Objeto 2 com base cilíndrica")
+pygame.display.set_caption("Final")
 clock = pygame.time.Clock()
 running = True
 
