@@ -91,37 +91,32 @@ def centraliza(vs):
 def transforma(vs, pos):
     return [(x+pos[0], y+pos[1], z+pos[2]) for x, y, z in centraliza(vs)]
 
-// ===== CONFIGURAÇÕES DE ILUMINAÇÃO ATUALIZADAS =====
-cor_cilindro = (230, 230, 230)  # Branco levemente acinzentado
-luz_amarela = normalize((-1.5, -1, 0.5))  # Direção ajustada
-cor_luz = (255, 255, 100)        # Amarelo mais intenso
+
+cor_cilindro = (230, 230, 230) 
+luz_amarela = normalize((-1.5, -1, 0.5))  
+cor_luz = (255, 255, 100)        
 especular_exp = 48
 intensidade_especular = 2.5
 
 def calcular_cor_phong(normal, posicao):
-    // Cor base escura para melhor contraste
     ambiente = (30, 30, 30)
     
-    // Cálculo preciso do reflexo
     reflect_dir = reflect(luz_amarela, normal)
     view_dir = normalize((0, 0, 1))
     especular_intensidade = math.pow(max(0, dot(reflect_dir, view_dir)), especular_exp)
     
-    // Efeito de hotspot circular (pra tentar substituir o phong porém ZERO
     hotspot = max(0, 1 - 2 * math.sqrt((posicao[0] - 1.4)**2 + (posicao[2] - 2.5)**2))
     hotspot_intensity = math.pow(hotspot, 8) * 255
     
-    // Combinação do brilho Phong com o hotspot amarelo
     brilho_phong = tuple(min(255, int(especular_intensidade * intensidade_especular * c)) for c in cor_luz)
     brilho_hotspot = (int(hotspot_intensity), int(hotspot_intensity * 0.9), int(hotspot_intensity * 0.4))
     
-    // Combinação final
     return tuple(min(255, ambiente[i] + brilho_phong[i] + brilho_hotspot[i]) for i in range(3))
 
 def face_na_frente(face_normal):
-    return face_normal[0] > 0.25  # Limiar mais baixo para mais faces refletoras
+    return face_normal[0] > 0.25  
 
-// ===== OBJETOS ORIGINAIS =====
+
 vertices1 = [
     (3,0,0), (3,4,0), (0,4,0), (0,0,0),
     (2,1,1), (2,3,1), (1,3,1), (1,1,1)
@@ -137,7 +132,7 @@ offset = len(v_cil)
 v2 = v_cil + v_hex
 f2 = f_cil + [[i + offset for i in face] for face in f_hex]
 
-// Configurações originais para outros objetos
+
 light_dir = normalize((-2, -1, -3))
 cor_piramide = (200, 50, 200)
 cor_hexagono = (80, 80, 180)
@@ -153,7 +148,6 @@ while running:
             running = False
     tela.fill((0, 0, 0))
     
-    # 1. Renderização da PIRÂMIDE (original)
     for face in sorted(faces1, key=lambda f: sum(v1[i][2] for i in f)/len(f)):
         p0, p1, p2 = v1[face[0]], v1[face[1]], v1[face[2]]
         n = normalize(cross(sub(p1, p0), sub(p2, p0)))
@@ -161,7 +155,6 @@ while running:
         cor = tuple(int(cor_piramide[i] * intensidade) for i in range(3))
         pygame.draw.polygon(tela, cor, [projeta_isometrica(v1[i]) for i in face])
     
-    // 2. Renderização do HEXÁGONO (original)
     for face in f_hex:
         p0, p1, p2 = v2[face[0] + offset], v2[face[1] + offset], v2[face[2] + offset]
         n = normalize(cross(sub(p1, p0), sub(p2, p0)))
@@ -169,7 +162,6 @@ while running:
         cor = tuple(int(cor_hexagono[i] * intensidade) for i in range(3))
         pygame.draw.polygon(tela, cor, [projeta_isometrica(v2[i + offset]) for i in face])
     
-    //3.Renderizaçã do CILINDRO (COM BRILHO AMARELO VISÍVEL)
     for face in f_cil:
         if len(face) == 4:
             p0, p1, p2 = v2[face[0]], v2[face[1]], v2[face[2]]
@@ -183,7 +175,7 @@ while running:
                 )
                 cor = calcular_cor_phong(normal, pos_media)
             else:
-                cor = (180, 180, 180)  # Cinza para a face traseira
+                cor = (180, 180, 180)
             
             pygame.draw.polygon(tela, cor, [projeta_isometrica(v2[i]) for i in face])
     
